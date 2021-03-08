@@ -1052,5 +1052,112 @@ export const BrickTableStory: Story = {
         rowKey: "id",
       },
     },
+    {
+      description: {
+        title: "跨页勾选",
+      },
+      brick: "div",
+      slots: {
+        "": {
+          bricks: [
+            {
+              brick: "presentational-bricks.brick-table",
+              properties: {
+                id: "t1",
+                page: "${query.page=1|number}",
+                pageSize: "${query.page_size=10|number}",
+                shouldUpdateUrlParams: true,
+                shouldRenderWhenUrlParamsUpdate: false,
+                configProps: {
+                  rowSelection: true,
+                },
+                rowKey: "name",
+                columns: [
+                  {
+                    title: "规则名称",
+                    dataIndex: "name",
+                    key: "name",
+                  },
+                ],
+              },
+              events: {
+                "select.update": [
+                  {
+                    action: "console.log",
+                    args: ["${EVENT.detail}"],
+                  },
+                ],
+                "filter.update": [
+                  {
+                    target: "#p1",
+                    method: "setArgsAndExecute",
+                    args: [
+                      {
+                        "0.page_size": "<% EVENT.detail.pageSize %>",
+                        "0.page": 1,
+                      },
+                    ],
+                  },
+                ],
+                "page.update": [
+                  {
+                    target: "#p1",
+                    method: "setArgsAndExecute",
+                    args: [
+                      {
+                        "0.page": "<% EVENT.detail.page %>",
+                      },
+                    ],
+                  },
+                ],
+              },
+              lifeCycle: {
+                onPageLoad: [
+                  {
+                    target: "#p1",
+                    method: "execute",
+                  },
+                ],
+              },
+            },
+            {
+              brick: "providers-of-permission.inheritance-api-search-rule",
+              properties: {
+                id: "p1",
+                args: [
+                  {
+                    page: "${QUERY.page=1|number}",
+                    page_size: "${QUERY.page_size=10|number}",
+                    sort: [
+                      {
+                        key: "ctime",
+                        order: -1,
+                      },
+                    ],
+                    fields: ["*"],
+                    query: {
+                      name: {
+                        $like: "%${query.q}%",
+                      },
+                    },
+                  },
+                ],
+              },
+              events: {
+                "response.success": [
+                  {
+                    target: "#t1",
+                    properties: {
+                      dataSource: "<% EVENT.detail %>",
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+          type: "bricks",
+        },
+      },
+    },
   ],
 };

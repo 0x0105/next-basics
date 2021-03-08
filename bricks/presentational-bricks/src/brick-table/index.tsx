@@ -399,6 +399,28 @@ export class BrickTableElement extends UpdatingElement {
   shouldUpdateUrlParams = true;
 
   /**
+   * @kind boolean
+   * @required false
+   * @default true
+   * @description 更新 url 参数时是否触发页面重新渲染。仅在`shouldUpdateUrlParams`为true时有效。
+   */
+  @property({
+    attribute: false,
+  })
+  shouldRenderWhenUrlParamsUpdate = true;
+
+  /**
+   * @kind boolean
+   * @required false
+   * @default `false`
+   * @description 是否显示已选择信息和清除按钮。仅在设置了`configProps.rowSelection`时有效。默认不显示
+   */
+  @property({
+    attribute: false,
+  })
+  showSelectInfo = false;
+
+  /**
    * @kind number
    * @required false
    * @default -
@@ -720,7 +742,9 @@ export class BrickTableElement extends UpdatingElement {
   })
   selectedRowKeys: React.Key[] = [];
 
+  private _selected = false;
   private _selectedRows: Record<string, any>[] = [];
+  private _allChildren: Record<string, any>[] = [];
   private _isInSelect = false;
   connectedCallback(): void {
     // istanbul ignore else
@@ -805,12 +829,23 @@ export class BrickTableElement extends UpdatingElement {
     selectedRowKeys: any,
     selectedRows: any[]
   ): void => {
-    this.selectedRowKeys = selectedRowKeys;
+    const rowKey =
+      this.rowKey ?? this._fields.rowKey ?? this.configProps?.rowKey;
     this._selectedRows = selectedRows;
+    if (this._selected) {
+      this._selectedRows = uniqBy(
+        [...selectedRows, ...this._allChildren],
+        rowKey
+      );
+    } else {
+      this._selectedRows = pullAllBy(selectedRows, this._allChildren, rowKey);
+    }
+    this.selectedRowKeys = map(this._selectedRows, rowKey);
+
     let detail = null;
     const data = isEmpty(this._selectUpdateEventDetailField)
-      ? selectedRows
-      : map(selectedRows, (row) =>
+      ? this._selectedRows
+      : map(this._selectedRows, (row) =>
           get(row, this._selectUpdateEventDetailField)
         );
     detail =
@@ -831,8 +866,10 @@ export class BrickTableElement extends UpdatingElement {
   };
 
   // istanbul ignore next
-  private _getSelectedRowsWithChildren = (row) => {
-    const result = [];
+  private _getSelectedRowsWithChildren = (
+    row: Record<string, any>
+  ): Record<string, any>[] => {
+    const result: Record<string, any>[] = [];
     if (
       !isEmpty(row[this.childrenColumnName]) &&
       isArray(row[this.childrenColumnName])
@@ -846,37 +883,33 @@ export class BrickTableElement extends UpdatingElement {
   };
 
   // istanbul ignore next
-  private _handleOnSelect = (row, checked: boolean, selectedRows) => {
+  private _handleOnSelect = (
+    row: Record<string, any>,
+    checked: boolean,
+    selectedRows: Record<string, any>[]
+  ): void => {
+    this._selected = checked;
     this._isInSelect = true;
     const rowKey =
       this.rowKey ?? this._fields.rowKey ?? this.configProps?.rowKey;
     const allChildren = this.selectAllChildren
       ? this._getSelectedRowsWithChildren(row)
       : [];
+
+    this._allChildren = allChildren;
     if (checked) {
       this._disabledChildrenKeys = uniq([
         ...this._disabledChildrenKeys,
         ...map(allChildren, rowKey),
       ]);
-      this._selectedRows = uniqBy(
-        [...selectedRows, row, ...allChildren],
-        rowKey
-      );
     } else {
       this._disabledChildrenKeys = pullAll(this._disabledChildrenKeys, [
         ...map(allChildren, rowKey),
       ]);
-      this._selectedRows = pullAllBy(
-        selectedRows,
-        [row, ...allChildren],
-        rowKey
-      );
     }
-    this.selectedRowKeys = map(this._selectedRows, rowKey);
     if (this.storeCheckedByUrl && !!rowKey) {
       this._updateUrlChecked([row[rowKey]], checked);
     }
-    this._handleRowSelectChange(this.selectedRowKeys, this._selectedRows);
   };
 
   // istanbul ignore next
@@ -885,6 +918,7 @@ export class BrickTableElement extends UpdatingElement {
     selectedRows: Record<string, any>[],
     changeRows: Record<string, any>[]
   ): void => {
+    this._selected = selected;
     this._isInSelect = true;
     const rowKey =
       this.rowKey ?? this._fields.rowKey ?? this.configProps?.rowKey;
@@ -898,33 +932,27 @@ export class BrickTableElement extends UpdatingElement {
           map(this._getSelectedRowsWithChildren(r), (cr) => cr[rowKey])
         )
       );
+      const allChildren = flatten(
+        map(changedParentRows, (r) =>
+          map(this._getSelectedRowsWithChildren(r), (cr) => cr)
+        )
+      );
+      this._allChildren = allChildren;
+
       if (selected) {
-        this._selectedRows = selectedRows;
         this._disabledChildrenKeys = uniq(
           this._disabledChildrenKeys.concat(toChangedChildrenKeys)
         );
       } else {
         // disabled children in changeRows should be removed
-        const realSelectedRows = selectedRows.filter(
-          (v: Record<string, any>) =>
-            !(
-              this._disabledChildrenKeys.includes(v[rowKey]) &&
-              toChangedChildrenKeys.includes(v[rowKey])
-            )
-        );
-        this._selectedRows = realSelectedRows;
         this._disabledChildrenKeys = this._disabledChildrenKeys.filter(
           (v) => !toChangedChildrenKeys.includes(v)
         );
       }
-    } else {
-      this._selectedRows = selectedRows;
     }
-    this.selectedRowKeys = map(this._selectedRows, rowKey);
     if (this.storeCheckedByUrl && !!rowKey) {
       this._updateUrlChecked(map(changeRows, rowKey), selected);
     }
-    this._handleRowSelectChange(this.selectedRowKeys, this._selectedRows);
   };
 
   private _getCheckedFromUrl = () => {
@@ -1012,9 +1040,32 @@ export class BrickTableElement extends UpdatingElement {
       this.frontendSearch(pagination, filters, sorter);
     } else {
       if (this.shouldUpdateUrlParams) {
-        history.push(`?${urlSearchParams}`);
+        history.push(`?${urlSearchParams}`, {
+          notify: !!this.shouldRenderWhenUrlParamsUpdate,
+        });
       }
     }
+  };
+
+  private renderSelectInfo = () => {
+    // eslint-disable-next-line react/display-name
+    return (
+      <span style={{ marginLeft: 20 }}>
+        <span>已选择 {this.selectedRowKeys.length} 项</span>
+        <a
+          role="button"
+          onClick={() => {
+            this.selectedRowKeys = [];
+            this._selectedRows = [];
+            this._disabledChildrenKeys = [];
+            this._allChildren = [];
+          }}
+        >
+          {" "}
+          清空
+        </a>
+      </span>
+    );
   };
 
   // 对前端搜索数据进行排序
@@ -1242,11 +1293,16 @@ export class BrickTableElement extends UpdatingElement {
       pageSizeOptions: ["10", "20", "50"],
       // eslint-disable-next-line react/display-name
       showTotal: (totals) => (
-        <span className={paginationStyle.totalText}>
-          {i18n.t(`${NS_PRESENTATIONAL_BRICKS}:${K.PAGINATION_TOTAL_TEXT}`)}{" "}
-          <strong className={paginationStyle.total}>{totals}</strong>{" "}
-          {i18n.t(`${NS_PRESENTATIONAL_BRICKS}:${K.PAGINATION_TOTAL_UNIT}`)}
-        </span>
+        <>
+          <span className={paginationStyle.totalText}>
+            {i18n.t(`${NS_PRESENTATIONAL_BRICKS}:${K.PAGINATION_TOTAL_TEXT}`)}{" "}
+            <strong className={paginationStyle.total}>{totals}</strong>{" "}
+            {i18n.t(`${NS_PRESENTATIONAL_BRICKS}:${K.PAGINATION_TOTAL_UNIT}`)}
+          </span>
+          {this.configProps?.rowSelection &&
+            this.showSelectInfo &&
+            this.renderSelectInfo()}
+        </>
       ),
     };
 
@@ -1273,10 +1329,13 @@ export class BrickTableElement extends UpdatingElement {
                   : this.selectedRowKeys,
                 onSelect: this._handleOnSelect,
                 onSelectAll: this._handleSelectAll,
+                onChange: this._handleRowSelectChange,
+                preserveSelectedRowKeys: true,
               }
             : {
                 // 当用户没有设置rowKey时的兼容处理
                 onChange: this._handleRowSelectChange,
+                preserveSelectedRowKeys: true,
               }),
           getCheckboxProps: (record: any) => {
             if (
