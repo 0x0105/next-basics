@@ -7856,10 +7856,10 @@ hosted-git-info@^3.0.6:
   dependencies:
     lru-cache "^6.0.0"
 
-hotkeys-js@^3.8.2:
-  version "3.8.2"
-  resolved "https://registry.npm.taobao.org/hotkeys-js/download/hotkeys-js-3.8.2.tgz?cache=0&sync_timestamp=1611061004349&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2Fhotkeys-js%2Fdownload%2Fhotkeys-js-3.8.2.tgz#177c3e7dc19279c881e69983177849bed76e4747"
-  integrity sha1-F3w+fcGSeciB5pmDF3hJvtduR0c=
+hotkeys-js@^3.8.3:
+  version "3.8.3"
+  resolved "https://registry.npm.taobao.org/hotkeys-js/download/hotkeys-js-3.8.3.tgz#0331c2cde770e62d51d5d023133f7c4395f59008"
+  integrity sha1-AzHCzedw5i1R1dAjEz98Q5X1kAg=
 
 hsl-regex@^1.0.0:
   version "1.0.0"

@@ -32,7 +32,7 @@
     "@next-libs/storage": "^1.0.0",
     "@next-sdk/user-service-sdk": "^1.0.0",
     "classnames": "^2.2.6",
-    "hotkeys-js": "^3.8.2",
+    "hotkeys-js": "^3.8.3",
     "immutability-helper": "^3.1.1"
   },
   "sideEffects": true
