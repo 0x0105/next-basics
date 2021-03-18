@@ -26,7 +26,7 @@
     "test:ci": "cross-env NODE_ENV='test' CI=true jest"
   },
   "devDependencies": {
-    "@fortawesome/fontawesome-svg-core": "^1.2.34",
+    "@fortawesome/fontawesome-svg-core": "^1.2.35",
     "@next-core/custom-antd-styles": "^1.6.5",
     "@next-libs/basic-components": "^2.0.0",
     "@next-libs/clipboard": "^2.0.0",
