@@ -11,6 +11,8 @@ const locale: Locale = {
   [K.BRICK_ERROR]: "糟糕！构件出现了一些问题。",
   [K.LEGACY_TEMPLATE_ERROR]: "糟糕！（老）模板出现了一些问题。",
   [K.HELP]: "帮助",
+
+  [K.BACK_TO_PORTAL]: "回到门户",
 };
 
 export default locale;

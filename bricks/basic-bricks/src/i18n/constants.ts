@@ -11,6 +11,9 @@ export enum K {
   BRICK_ERROR = "BRICK_ERROR",
   LEGACY_TEMPLATE_ERROR = "LEGACY_TEMPLATE_ERROR",
   HELP = "HELP",
+
+  // Specially customized for Dossen
+  BACK_TO_PORTAL = "BACK_TO_PORTAL",
 }
 
 export type Locale = { [key in K]: string };

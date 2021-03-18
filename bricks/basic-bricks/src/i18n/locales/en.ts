@@ -11,6 +11,8 @@ const locale: Locale = {
   [K.BRICK_ERROR]: "Oops! Brick went wrong.",
   [K.LEGACY_TEMPLATE_ERROR]: "Oops! Legacy template went wrong.",
   [K.HELP]: "Help",
+
+  [K.BACK_TO_PORTAL]: "Back to portal",
 };
 
 export default locale;

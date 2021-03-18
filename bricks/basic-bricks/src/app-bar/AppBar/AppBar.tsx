@@ -33,6 +33,14 @@ export function AppBar({
     () => getRuntime().getFeatureFlags()["hide-launchpad-button"],
     []
   );
+  const hideUserSessionButton = React.useMemo(
+    () => getRuntime().getFeatureFlags()["hide-user-session-button"],
+    []
+  );
+  const backToPortalUrl = React.useMemo(
+    () => getRuntime().getMiscSettings()["back-to-portal-url"],
+    []
+  );
 
   React.useEffect(() => {
     const link = document.querySelector(
@@ -86,6 +94,10 @@ export function AppBar({
     getHistory().replace("/auth/logout");
   };
 
+  const handleBackToPortal = (): void => {
+    window.location.href = backToPortalUrl as string;
+  };
+
   const handleRedirectToMe = (): void => {
     getHistory().push("/account-management");
   };
@@ -110,14 +122,30 @@ export function AppBar({
           {username ? (
             <Dropdown
               overlay={
-                <Menu>
-                  {accountEntryEnabled && (
-                    <Menu.Item onClick={handleRedirectToMe}>
-                      {t(K.ACCOUNT_MANAGEMENT)}
+                !hideUserSessionButton ? (
+                  <Menu>
+                    {accountEntryEnabled && (
+                      <Menu.Item onClick={handleRedirectToMe}>
+                        {t(K.ACCOUNT_MANAGEMENT)}
+                      </Menu.Item>
+                    )}
+                    <Menu.Item
+                      data-testid="back-to-portal-btn"
+                      onClick={handleLogout}
+                    >
+                      {t(K.LOGOUT)}
                     </Menu.Item>
-                  )}
-                  <Menu.Item onClick={handleLogout}>{t(K.LOGOUT)}</Menu.Item>
-                </Menu>
+                  </Menu>
+                ) : (
+                  <Menu>
+                    <Menu.Item
+                      data-testid="back-to-portal-btn"
+                      onClick={handleBackToPortal}
+                    >
+                      {t(K.BACK_TO_PORTAL)}
+                    </Menu.Item>
+                  </Menu>
+                )
               }
               trigger={["click"]}
             >

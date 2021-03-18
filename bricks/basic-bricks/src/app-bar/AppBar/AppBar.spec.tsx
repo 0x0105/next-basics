@@ -31,7 +31,14 @@ jest.spyOn(brickKit, "getAuth").mockReturnValue({
   username: "tester",
 });
 
+delete window.location;
+const spyOnLocationAssign: jest.Mock = jest.fn();
+(window as any).location = {
+  assign: spyOnLocationAssign,
+};
+
 const getFeatureFlags = jest.fn().mockReturnValue({});
+const getMiscSettings = jest.fn().mockReturnValue({});
 const getMicroApps = jest
   .fn()
   .mockReturnValueOnce([])
@@ -46,6 +53,7 @@ jest.spyOn(brickKit, "getRuntime").mockReturnValue({
   }),
   getFeatureFlags,
   getMicroApps,
+  getMiscSettings,
 } as any);
 
 describe("AppBar", () => {
@@ -138,5 +146,25 @@ describe("AppBar", () => {
     getFeatureFlags.mockReturnValueOnce({ "hide-launchpad-button": true });
     const wrapper = shallow(<AppBar pageTitle="" breadcrumb={null} />);
     expect(wrapper.find(LaunchpadButton).length).toBe(0);
+  });
+
+  it("should hide logout and my-account buttons, add back-to-portal button", () => {
+    getFeatureFlags.mockReturnValueOnce({ "hide-user-session-button": true });
+    getMiscSettings.mockReturnValueOnce({
+      "back-to-portal-url": "https://www.baidu.com",
+    });
+
+    const wrapper = shallow(<AppBar pageTitle="" breadcrumb={null} />);
+    expect(
+      (wrapper.find(Dropdown).prop("overlay") as React.ReactElement).props
+        .children.length
+    ).toBe(1);
+    expect(
+      (wrapper.find(Dropdown).prop("overlay") as React.ReactElement).props
+        .children[0].title
+    ).toBe("回到门户");
+
+    // expect(spyOnLocationAssign).toBeCalledTimes(1);
+    // expect(spyOnLocationAssign).toBeCalledWith("");
   });
 });
